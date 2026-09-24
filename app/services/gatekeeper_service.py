@@ -24,10 +24,12 @@ class FastGatekeeperService:
         X = safe_prompts + risky_prompts
         y = [0] * len(safe_prompts) + [1] * len(risky_prompts)
         
-        self.vectorizer = TfidfVectorizer()
+        # Use ngram_range=(1, 2) to capture phrase patterns like "system prompt" or "ignore previous"
+        self.vectorizer = TfidfVectorizer(ngram_range=(1, 2))
         X_vec = self.vectorizer.fit_transform(X)
         
-        self.model = LogisticRegression()
+        # C=10.0 increases sensitivity to matching threat phrases
+        self.model = LogisticRegression(C=10.0)
         self.model.fit(X_vec, y)
 
     def predict_risk_score(self, text: str) -> float:
