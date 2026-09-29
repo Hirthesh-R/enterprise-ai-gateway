@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise AI Gateway · Security Console</title>
+  <meta name="description" content="Enterprise AI Gateway & Compliance Proxy — security, compliance and observability console." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2306b6d4' d='M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <!-- ============================== HEADER ============================== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <h1>ENTERPRISE AI GATEWAY</h1>
+        <p class="tagline">Security <span>•</span> Compliance <span>•</span> Observability</p>
+      </div>
+    </div>
+    <div class="topbar-status">
+      <span class="status-chip" id="chip-gateway" title="Gateway health"><i class="dot"></i><span>Gateway</span></span>
+      <span class="status-chip" id="chip-db" title="Database"><i class="dot"></i><span>Database</span></span>
+      <span class="status-chip" id="chip-redis" title="Rate limiter backend"><i class="dot"></i><span>Redis</span></span>
+      <span class="status-chip live" id="chip-live" title="Real-time updates"><i class="dot pulse"></i><span>Connecting…</span></span>
+      <a class="btn btn-ghost btn-sm" href="/docs" target="_blank" rel="noopener">API Docs ↗</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- =========================== LEFT: PLAYGROUND =========================== -->
+    <aside class="col-left">
+      <section class="card glass" id="playground">
+        <div class="card-head">
+          <div>
+            <h2>API Playground</h2>
+            <p class="muted">POST <code>/api/v1/gateway/chat</code></p>
+          </div>
+          <span class="badge badge-cyan">Interactive</span>
+        </div>
+
+        <div class="field">
+          <label class="label">Quick scenarios</label>
+          <div class="chips" id="scenario-chips">
+            <button type="button" class="chip" data-scenario="clean">✓ Clean prompt</button>
+            <button type="button" class="chip" data-scenario="email">✉ Email PII</button>
+            <button type="button" class="chip" data-scenario="phone">☎ Phone PII</button>
+            <button type="button" class="chip" data-scenario="card">💳 Credit card</button>
+            <button type="button" class="chip" data-scenario="multi">⧉ Multi-PII + SSN</button>
+            <button type="button" class="chip chip-danger" data-scenario="injection">⚠ Injection</button>
+            <button type="button" class="chip chip-danger" data-scenario="exfil">⚠ Key exfiltration</button>
+            <button type="button" class="chip chip-danger" data-scenario="bypass">⚠ Policy bypass</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="prompt">Prompt</label>
+          <textarea id="prompt" rows="6" maxlength="8000" placeholder="Type a prompt… try including an email, phone number or an injection attempt."></textarea>
+          <div class="field-foot"><span id="prompt-count">0 chars</span><span id="prompt-tokens">~0 tokens (approx.)</span></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="api-key">API Key</label>
+            <select id="api-key">
+              <option value="demo-key-001">demo-****-001 · Team Alpha (100 tok/min)</option>
+              <option value="demo-key-002">demo-****-002 · Team Beta (100 tok/min)</option>
+              <option value="enterprise-demo-key">enterprise-****-key · Enterprise (1000 tok/min)</option>
+              <option value="legacy-revoked-key">legacy-****-key · Revoked (403 test)</option>
+              <option value="__invalid__">invalid-****-key · Unknown (401 test)</option>
+              <option value="__custom__">Custom key…</option>
+            </select>
+            <input type="password" id="custom-key" class="hidden" placeholder="Enter API key" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label class="label">Target Model</label>
+            <div class="segmented" id="model-select" role="radiogroup">
+              <button type="button" class="seg active" data-model="gpt-4" role="radio" aria-checked="true">GPT-4</button>
+              <button type="button" class="seg" data-model="gemini-pro" role="radio">Gemini Pro</button>
+              <button type="button" class="seg" data-model="claude" role="radio">Claude</button>
+              <button type="button" class="seg" data-model="llama" role="radio">Llama</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toggles">
+          <label class="toggle">
+            <input type="checkbox" id="toggle-pii" checked />
+            <span class="switch"></span>
+            <span><strong>Enable PII Scrubbing</strong><small>Redact email, phone, card &amp; SSN before forwarding</small></span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-injection" checked />
+            <span class="switch"></span>
+            <span><strong>Enable Prompt Injection Defense</strong><small>Block HIGH/MEDIUM risk prompts</small></span>
+          </label>
+        </div>
+
+        <div class="rate-meter" id="rate-meter">
+          <div class="rate-meter-head">
+            <span>Token budget <small class="muted" id="rate-backend"></small></span>
+            <span id="rate-text">—</span>
+          </div>
+          <div class="bar"><div class="bar-fill" id="rate-fill"></div></div>
+          <div class="rate-meter-foot muted"><span id="rate-requests">0 requests in window</span><span id="rate-reset"></span></div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-primary" id="send-btn">
+            <span class="btn-label">SEND REQUEST</span><span class="spinner hidden"></span>
+          </button>
+          <button type="button" class="btn btn-ghost" id="burst-btn" title="Fire 8 rapid requests with the selected key to trigger the token rate limiter">Burst ×8</button>
+        </div>
+      </section>
+
+      <section class="card glass" id="inspector">
+        <div class="card-head">
+          <div><h2>Response Inspector</h2><p class="muted">Security decision &amp; pipeline trace</p></div>
+          <button type="button" class="btn btn-ghost btn-sm hidden" id="copy-json">Copy JSON</button>
+        </div>
+        <div id="inspector-body">
+          <div class="empty-state">
+            <div class="empty-icon">⌁</div>
+            <p>Send a request to see the transaction ID, sanitized prompt, model response, token usage and security decision.</p>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ========================= RIGHT: OBSERVABILITY ========================= -->
+    <section class="col-right">
+      <div class="section-bar">
+        <div>
+          <h2 class="section-title">Live Security Overview</h2>
+          <p class="muted" id="last-updated">Loading metrics…</p>
+        </div>
+        <div class="section-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="simulate-btn" title="Send 12 sample prompts through the real pipeline">▶ Simulate traffic</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="refresh-btn">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <article class="kpi glass" data-accent="cyan">
+          <div class="kpi-top"><span class="kpi-label">Total Requests</span><span class="kpi-icon">⇄</span></div>
+          <div class="kpi-value" id="kpi-total">0</div>
+          <div class="kpi-sub" id="kpi-total-sub">— last hour</div>
+        </article>
+        <article class="kpi glass" data-accent="red">
+          <div class="kpi-top"><span class="kpi-label">Blocked Attacks</span><span class="kpi-icon">⛨</span></div>
+          <div class="kpi-value" id="kpi-blocked">0</div>
+          <div class="kpi-sub" id="kpi-blocked-sub">—% block rate</div>
+        </article>
+        <article class="kpi glass" data-accent="green">
+          <div class="kpi-top"><span class="kpi-label">PII Redactions</span><span class="kpi-icon">▦</span></div>
+          <div class="kpi-value" id="kpi-pii">0</div>
+          <div class="kpi-sub" id="kpi-pii-sub">— requests with PII</div>
+        </article>
+        <article class="kpi glass" data-accent="cyan">
+          <div class="kpi-top"><span class="kpi-label">Avg Response Time</span><span class="kpi-icon">◷</span></div>
+          <div class="kpi-value"><span id="kpi-latency">0</span><small>ms</small></div>
+          <div class="kpi-sub" id="kpi-latency-sub">p95 — ms</div>
+        </article>
+        <article class="kpi glass" data-accent="green">
+          <div class="kpi-top"><span class="kpi-label">Total Tokens</span><span class="kpi-icon">◈</span></div>
+          <div class="kpi-value" id="kpi-tokens">0</div>
+          <div class="kpi-sub">approximate count</div>
+        </article>
+        <article class="kpi glass" data-accent="amber">
+          <div class="kpi-top"><span class="kpi-label">Rate Limit Violations</span><span class="kpi-icon">⏱</span></div>
+          <div class="kpi-value" id="kpi-ratelimit">0</div>
+          <div class="kpi-sub" id="kpi-ratelimit-sub">— unauthorized</div>
+        </article>
+      </div>
+
+      <div class="chart-grid">
+        <article class="card glass chart-card span-2">
+          <div class="card-head">
+            <div><h3>Requests per Minute</h3><p class="muted" id="rpm-sub">Allowed vs blocked vs throttled</p></div>
+            <div class="segmented segmented-sm" id="window-select">
+              <button type="button" class="seg" data-window="15">15m</button>
+              <button type="button" class="seg active" data-window="60">1h</button>
+              <button type="button" class="seg" data-window="360">6h</button>
+              <button type="button" class="seg" data-window="1440">24h</button>
+            </div>
+          </div>
+          <div class="chart-box tall"><canvas id="chart-rpm"></canvas></div>
+        </article>
+        <article class="card glass chart-card">
+          <div class="card-head"><div><h3>Threat Distribution</h3><p class="muted">Security events in window</p></div></div>
+          <div class="chart-box"><canvas id="chart-threats"></canvas><div class="chart-empty hidden" id="threats-empty">No threats in this window</div></div>
+        </article>
+        <article class="card glass chart-card">
+          <div class="card-head"><div><h3>Model Usage</h3><p class="muted">Requests per target model</p></div></div>
+          <div class="chart-box"><canvas id="chart-models"></canvas></div>
+        </article>
+        <article class="card glass chart-card">
+          <div class="card-head"><div><h3>Response Latency</h3><p class="muted">Allowed requests · avg &amp; p95 (ms)</p></div></div>
+          <div class="chart-box"><canvas id="chart-latency"></canvas></div>
+        </article>
+        <article class="card glass chart-card">
+          <div class="card-head"><div><h3>PII Type Distribution</h3><p class="muted">Detected PII by category</p></div></div>
+          <div class="chart-box"><canvas id="chart-pii"></canvas></div>
+        </article>
+      </div>
+
+      <article class="card glass" id="audit">
+        <div class="card-head">
+          <div><h3>Audit Log</h3><p class="muted">Sanitized records only — raw prompts and keys are never stored</p></div>
+          <span class="muted" id="audit-count">—</span>
+        </div>
+        <div class="filters">
+          <input type="search" id="f-search" placeholder="Search transaction, key, model, IP…" />
+          <select id="f-status">
+            <option value="">All statuses</option>
+            <option value="allowed">Allowed</option>
+            <option value="blocked">Blocked</option>
+            <option value="rate_limited">Rate limited</option>
+            <option value="unauthorized">Unauthorized</option>
+            <option value="forbidden">Forbidden</option>
+            <option value="error">Error</option>
+          </select>
+          <select id="f-model">
+            <option value="">All models</option>
+            <option value="gpt-4">GPT-4</option>
+            <option value="gemini-pro">Gemini Pro</option>
+            <option value="claude">Claude</option>
+            <option value="llama">Llama</option>
+          </select>
+          <select id="f-threat">
+            <option value="">All threats</option>
+            <option value="NONE">No threat</option>
+            <option value="PROMPT_INJECTION">Prompt injection</option>
+            <option value="SYSTEM_PROMPT_EXFILTRATION">System prompt exfiltration</option>
+            <option value="CREDENTIAL_EXFILTRATION">Credential exfiltration</option>
+            <option value="POLICY_BYPASS">Policy bypass</option>
+          </select>
+          <select id="f-pii">
+            <option value="">PII: any</option>
+            <option value="true">PII detected</option>
+            <option value="false">No PII</option>
+          </select>
+          <select id="f-injection">
+            <option value="">Injection: any</option>
+            <option value="true">Injection detected</option>
+            <option value="false">No injection</option>
+          </select>
+          <input type="date" id="f-date" title="Date (UTC)" />
+          <button type="button" class="btn btn-ghost btn-sm" id="f-reset">Reset</button>
+        </div>
+        <div class="table-wrap">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th><th>Transaction ID</th><th>API Key</th><th>Model</th><th>Status</th>
+                <th class="num">Time</th><th class="num">In</th><th class="num">Out</th><th>PII</th><th>Threat</th><th>IP</th>
+              </tr>
+            </thead>
+            <tbody id="audit-body"><tr><td colspan="11" class="muted center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button type="button" class="btn btn-ghost btn-sm" id="page-prev">← Prev</button>
+          <span id="page-info" class="muted">Page 1</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="page-next">Next →</button>
+        </div>
+      </article>
+
+      <footer class="footer muted">
+        Enterprise AI Gateway &amp; Compliance Proxy · mock LLM providers · token counts are approximate ·
+        <a href="/docs" target="_blank" rel="noopener">Swagger</a> · <a href="/health" target="_blank" rel="noopener">Health</a>
+      </footer>
+    </section>
+  </main>
+
+  <div class="toast-stack" id="toasts" aria-live="polite"></div>
+
+  <script src="/static/js/vendor/chart.umd.min.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
