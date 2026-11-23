@@ -22,6 +22,8 @@ A dark, real-time observability console shows the KPIs, charts, audit log and an
 
 > The LLM providers are **mocks** with realistic latency, so no paid API is needed. The token counter is an **approximation** and does not match any commercial tokenizer exactly.
 
+![Dashboard](docs/screenshots/dashboard.png)
+
 ---
 
 ## Architecture
@@ -262,22 +264,17 @@ curl -s localhost:8000/health
 
 ## Screenshots
 
-Add your own screenshots to `docs/screenshots/`:
+**Prompt injection blocked before it reaches the model (HTTP 403)**
 
-* `dashboard.png`: KPI cards, charts and audit log
+![Injection blocked](docs/screenshots/injection-blocked.png)
 
-* `playground-blocked.png`: 🚨 REQUEST BLOCKED inspector
+**PII redacted: the model only sees `[REDACTED_EMAIL]` and `[REDACTED_PHONE]`**
 
-* `swagger.png`: API docs
+![PII redaction](docs/screenshots/pii-redaction.png)
 
-## GitHub Setup
+**Threats, model usage, latency and PII charts with the audit log**
 
-```bash
-git remote add origin git@github.com:<you>/enterprise-ai-gateway.git
-git push -u origin main
-```
-
-`.env`, database files and caches are git-ignored. Never commit real secrets.
+![Charts](docs/screenshots/charts.png)
 
 ## Known Limitations
 
