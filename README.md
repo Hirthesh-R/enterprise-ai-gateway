@@ -1,5 +1,7 @@
 # Enterprise AI Gateway & Compliance Proxy
 
+[![tests](https://github.com/Hirthesh-R/enterprise-ai-gateway/actions/workflows/tests.yml/badge.svg)](https://github.com/Hirthesh-R/enterprise-ai-gateway/actions/workflows/tests.yml)
+
 **Security • Compliance • Observability** for LLM traffic.
 
 This is a FastAPI gateway that sits between users and large language models. For every prompt it:
