@@ -26,6 +26,7 @@ os.environ.update(
         "ENVIRONMENT": "test",
         "DATABASE_URL": f"sqlite:///{TEST_DB_PATH}",
         "REDIS_URL": "",
+        "GEMINI_API_KEY": "",
         "API_SECRET": "test-secret-value-for-pytest-only",
         "AUTO_SEED_DEMO_DATA": "false",
         "SEED_DEMO_KEYS": "true",

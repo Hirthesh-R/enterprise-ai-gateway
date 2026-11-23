@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     # --- Mock LLM ----------------------------------------------------------
     mock_latency_scale: float = Field(default=1.0, ge=0.0, le=10.0)
 
+    # --- Live Gemini (optional) ---------------------------------------------
+    # When GEMINI_API_KEY is set, "gemini-pro" requests go to the real Gemini API.
+    gemini_api_key: str | None = None
+    # Ordered fallback list: the first model that answers is used.
+    gemini_models: str = "gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.8-flash"
+    gemini_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
+
     # --- Demo data ---------------------------------------------------------
     seed_demo_keys: bool = True
     auto_seed_demo_data: bool = True
@@ -71,7 +78,7 @@ class Settings(BaseSettings):
     # --- Paths -------------------------------------------------------------
     frontend_dir: Path = PROJECT_ROOT / "frontend"
 
-    @field_validator("redis_url", "injection_rules_file", mode="before")
+    @field_validator("redis_url", "injection_rules_file", "gemini_api_key", mode="before")
     @classmethod
     def _empty_to_none(cls, value: str | None) -> str | None:
         """Treat empty strings from ``.env`` files as *unset*."""
@@ -109,6 +116,10 @@ class Settings(BaseSettings):
     @property
     def is_sqlite(self) -> bool:
         return self.database_url.startswith("sqlite")
+
+    @property
+    def gemini_model_list(self) -> list[str]:
+        return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
 
     @property
     def cors_origin_list(self) -> list[str]:

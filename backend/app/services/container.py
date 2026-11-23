@@ -10,6 +10,7 @@ from app.config import Settings
 from app.database import SessionLocal
 from app.services.api_key_service import ApiKeyService
 from app.services.compliance_engine import ComplianceEngine
+from app.services.gemini_provider import GeminiProvider
 from app.services.injection_detector import InjectionDetector, build_detector
 from app.services.llm_provider import ProviderRegistry, build_mock_registry
 from app.services.pii_scrubber import PIIScrubber
@@ -38,6 +39,10 @@ def build_container(settings: Settings) -> ServiceContainer:
     scrubber = PIIScrubber()
     detector = build_detector(settings.injection_block_threshold, settings.injection_rules_file)
     providers = build_mock_registry(settings.mock_latency_scale)
+    if settings.gemini_api_key:
+        # Replace the mock "gemini-pro" with the real Gemini API.
+        providers.register(GeminiProvider(settings.gemini_api_key, settings.gemini_model_list,
+                                          timeout_seconds=settings.gemini_timeout_seconds))
     broadcaster = EventBroadcaster()
     telemetry = TelemetryService(SessionLocal, broadcaster)
     engine = ComplianceEngine(settings, SessionLocal, api_keys, limiter, scrubber, detector, providers, telemetry)

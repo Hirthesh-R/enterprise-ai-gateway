@@ -2,12 +2,13 @@ fastapi>=0.110
 uvicorn[standard]>=0.29
 pydantic>=2.6
 pydantic-settings>=2.2
-SQLAlchemy[asyncio]>=2.0.29
+SQLAlchemy[asyncio]>=2.0.29,<2.1
 aiosqlite>=0.20
 aiomysql>=0.2
 cryptography>=42.0
 redis>=5.0
 python-dotenv>=1.0
+google-genai>=1.0
 # testing
 pytest>=8.0
 pytest-asyncio>=0.23
